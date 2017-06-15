@@ -153,7 +153,6 @@ class Cache {
                         if($this->config['gzip']) {
                             $content = gzencode($content, 9);
                             header('Content-Encoding: gzip');
-                        } else {
                             header( 'Content-Length: ' . strlen($content));
                         }
 
