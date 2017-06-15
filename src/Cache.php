@@ -21,7 +21,7 @@ class Cache {
     /**
      * @var string
      */
-    protected $cachePath = '/Users/dweber/Workspace/hengst/web/typo3temp/Cache';
+    protected $cachePath = '';
 
     /**
      * @var string
