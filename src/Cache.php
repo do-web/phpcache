@@ -186,8 +186,8 @@ class Cache
                 }
 
                 if ((is_file($this->getHtmlCacheFilename()) &&
-                        is_file($this->getDataCacheFilename() &&
-                            $this->apcu === false)) ||
+                        is_file($this->getDataCacheFilename()) &&
+                        $this->apcu === false) ||
                     ($this->apcu === true &&
                         apcu_fetch($this->getDataCacheFilename()) &&
                         apcu_fetch($this->getHtmlCacheFilename()))
