@@ -17,7 +17,7 @@ class Cache {
      * @var string
      */
     const CACHE_HTML_EXT = '.content.cache';
-    
+
     /**
      * @var string
      */
@@ -121,10 +121,16 @@ class Cache {
      *
      */
     public function start() {
-
         try {
             $this->config = Yaml::parse(file_get_contents('../phpcache.yaml'));
-            $this->cachePath = rtrim($this->config['cache_dir'], DIRECTORY_SEPARATOR);
+            $this->cachePath = realpath($this->config['cache_dir']);
+
+            // Create cache folder
+            if(!$this->cachePath) {
+                mkdir($this->config['cache_dir'], $this->config['file_mode'], true);
+                $this->cachePath = realpath($this->config['cache_dir']);
+            }
+
             $isXhr = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
             if ($this->isExcluded() === false && $this->isAllowedMethod() === true &&
@@ -176,6 +182,7 @@ class Cache {
                 http_response_code($data['responseCode']);
             }
         }
+        header('X-Phpcache: hit');
     }
 
     /**
@@ -195,11 +202,6 @@ class Cache {
      * @param $content
      */
     protected function save($content) {
-        // Create cache folder
-        if(!is_dir($this->cachePath)) {
-            mkdir($this->cachePath, $this->config['file_mode'], true);
-        }
-
         file_put_contents($this->getHtmlCacheFilename(), $content);
 
         $headers = headers_list();
