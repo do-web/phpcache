@@ -1,5 +1,6 @@
 <?php
 namespace PHP\Cache;
+use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -34,6 +35,11 @@ class Cache {
     protected $cachingActive = false;
 
     /**
+     * @var bool
+     */
+    protected $apcu = false;
+
+    /**
      * @var array
      */
     protected $config = [];
@@ -44,12 +50,13 @@ class Cache {
      * @return mixed
      */
     protected function cleanUp($buffer, $phase) {
-        $buffer = $this->stop($buffer);
 
         if($this->config['gzip']) {
-            $buffer = gzencode($buffer, 9);
+            $buffer = $this->stop(gzencode($buffer, 9));
             header('Content-Encoding: gzip');
-            header( 'Content-Length: ' . strlen($buffer));
+            header('Content-Length: ' . strlen($buffer));
+        } else {
+            $buffer = $this->stop($buffer);
         }
 
         return $buffer;
@@ -83,7 +90,7 @@ class Cache {
     /**
      * @return string
      */
-    protected function generateCacheKey() {
+    protected function getCacheKey() {
         return md5($this->getUri());
     }
 
@@ -124,15 +131,23 @@ class Cache {
     }
 
     /**
+     * @return bool
+     */
+    protected function isClearCacheVarSet() {
+        return isset($_GET[$this->config['clear_cache_param']]);
+    }
+
+    /**
      *
      */
     public function start() {
         try {
             $this->config = Yaml::parse(file_get_contents('../phpcache.yaml'));
+            $this->apcu = $this->config['apcu'] && extension_loaded('apcu');
             $this->cachePath = realpath($this->config['cache_dir']);
 
             // Create cache folder
-            if(!$this->cachePath) {
+            if(!$this->cachePath && !$this->apcu) {
                 mkdir($this->config['cache_dir'], $this->config['file_mode'], true);
                 $this->cachePath = realpath($this->config['cache_dir']);
             }
@@ -143,25 +158,35 @@ class Cache {
                 ($isXhr === false || ($this->config['xhr'] === true && $isXhr === true))) {
 
                 $this->cachingActive = true;
-                $this->cacheKey = $this->generateCacheKey();
+                $this->cacheKey = $this->getCacheKey();
 
                 if(is_file($this->getHtmlCacheFilename()) && is_file($this->getDataCacheFilename())) {
+
+                    if($this->isClearCacheVarSet()) {
+                        unlink($this->getHtmlCacheFilename());
+                        unlink($this->getDataCacheFilename());
+                    }
+
                     if((time() - filemtime($this->getHtmlCacheFilename())) > intval($this->config['lifetime'])) {
                         unlink($this->getHtmlCacheFilename());
                         unlink($this->getDataCacheFilename());
                     } else {
 
-                        $data = unserialize(file_get_contents($this->getDataCacheFilename()));
+                        if($this->apcu) {
+                            $data = unserialize(apcu_fetch($this->getDataCacheFilename()));
+                            $content = apcu_fetch($this->getHtmlCacheFilename());
+                        } else {
+                            $data = unserialize(file_get_contents($this->getDataCacheFilename()));
+                            $content = file_get_contents($this->getHtmlCacheFilename());
+                        }
+
                         $this->sendCachedHeaders($data);
 
-                        $content = file_get_contents($this->getHtmlCacheFilename());
-
-                        if($this->config['gzip']) {
-                            $content = gzencode($content, 9);
+                        if($data['gzip']) {
                             header('Content-Encoding: gzip');
-                            header( 'Content-Length: ' . strlen($content));
+                            header('Content-Length: ' . strlen($content));
                         } else {
-                            header( 'Content-Length: ' . strlen($content));
+                            header('Content-Length: ' . strlen($content));
                         }
 
                         echo $content;
@@ -195,12 +220,17 @@ class Cache {
     /**
      * @return bool
      */
-    protected function clear() {
-        foreach (glob($this->cachePath . DIRECTORY_SEPARATOR . '*' . self::CACHE_HTML_EXT) as $htmlFile) {
-            unlink($htmlFile);
-        }
-        foreach (glob($this->cachePath . DIRECTORY_SEPARATOR . '*' . self::CACHE_DATA_EXT) as $dataFile) {
-            unlink($dataFile);
+    public function clear() {
+        if($this->apcu) {
+            apc_clear_cache('user');
+        } else {
+
+            foreach (glob($this->cachePath . DIRECTORY_SEPARATOR . '*' . self::CACHE_HTML_EXT) as $htmlFile) {
+                unlink($htmlFile);
+            }
+            foreach (glob($this->cachePath . DIRECTORY_SEPARATOR . '*' . self::CACHE_DATA_EXT) as $dataFile) {
+                unlink($dataFile);
+            }
         }
         return true;
     }
@@ -209,7 +239,11 @@ class Cache {
      * @param $content
      */
     protected function save($content) {
-        file_put_contents($this->getHtmlCacheFilename(), $content);
+        if($this->apcu) {
+            apcu_store($this->getHtmlCacheFilename(), $content);
+        } else {
+            file_put_contents($this->getHtmlCacheFilename(), $content);
+        }
 
         $headers = headers_list();
         $removeHeaders = ['X-Powered-By', 'Set-Cookie'];
@@ -224,10 +258,17 @@ class Cache {
 
         $data = [
             'headers' => $headers,
-            'responseCode' => http_response_code()
+            'responseCode' => http_response_code(),
+            'uri' => $this->getUri(),
+            'time' => time(),
+            'gzip' => $this->config['gzip'],
         ];
 
-        file_put_contents($this->getDataCacheFilename(), serialize($data));
+        if($this->apcu) {
+            apcu_store($this->getDataCacheFilename(), serialize($data));
+        } else {
+            file_put_contents($this->getDataCacheFilename(), serialize($data));
+        }
     }
 
     /**
