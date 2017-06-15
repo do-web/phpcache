@@ -1,0 +1,22 @@
+{
+    "name": "doweb/phpcache",
+    "description": "A cache like Varnish but easier and faster for all slow php applications",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Dominik Weber",
+            "email": "info@dominikweber.me",
+            "homepage": "https://dominikweber.me",
+            "role": "Developer"
+        }
+    ],
+    "license": "MIT",
+    "require": {
+        "symfony/yaml": "^3.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "PHP\\Cache\\": "src"
+        }
+    }
+}

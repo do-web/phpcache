@@ -1,0 +1,7 @@
+.DS_Store
+*.idea*
+vendor
+!.gitkeep
+composer.lock
+composer-setup.php
+composer.phar

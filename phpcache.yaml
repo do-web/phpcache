@@ -1,0 +1,13 @@
+# Cache folder file mode
+file_mode: 755
+# Absolute path to store the cache files
+cache_dir: /my/cache_dir
+# Cache Ajax/xhr requests
+xhr: true
+# Max. cache lifetime in seconds
+lifetime: 3600
+# Use gzip output
+gzip: true
+# Regex to exclude uri's
+exclude:
+  rule_1: /\/nocache\.html/is
