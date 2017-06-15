@@ -46,7 +46,13 @@ class Cache {
     protected function cleanUp($buffer, $phase) {
         $buffer = $this->stop($buffer);
 
-        return $this->config['gzip'] ? ob_gzhandler($buffer, $phase) : $buffer;
+        if($this->config['gzip']) {
+            $buffer = gzencode($buffer, 9);
+            header('Content-Encoding: gzip');
+            header( 'Content-Length: ' . strlen($buffer));
+        }
+
+        return $buffer;
     }
 
     /**
@@ -153,6 +159,8 @@ class Cache {
                         if($this->config['gzip']) {
                             $content = gzencode($content, 9);
                             header('Content-Encoding: gzip');
+                            header( 'Content-Length: ' . strlen($content));
+                        } else {
                             header( 'Content-Length: ' . strlen($content));
                         }
 
