@@ -1,5 +1,5 @@
 # Cache folder file mode
-file_mode: 755
+file_mode: 0755
 # Absolute path to store the cache files
 cache_dir: /my/cache_dir
 # Cache Ajax/xhr requests
