@@ -9,7 +9,7 @@ lifetime: 3600
 # Use gzip output
 gzip: true
 # Use apcu cache
-apuc: true
+apcu: true
 # GET var to clear a page cache
 clear_cache_param: clear_cache
 # Regex to exclude uri's

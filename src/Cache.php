@@ -177,8 +177,8 @@ class Cache
 
                 if ($this->isClearCacheVarSet()) {
                     if ($this->apcu) {
-                        apc_delete($this->getHtmlCacheFilename());
-                        apc_delete($this->getDataCacheFilename());
+                        apcu_delete($this->getHtmlCacheFilename());
+                        apcu_delete($this->getDataCacheFilename());
                     } else {
                         unlink($this->getHtmlCacheFilename());
                         unlink($this->getDataCacheFilename());
@@ -253,8 +253,7 @@ class Cache
     public function clear()
     {
         if ($this->apcu) {
-            apc_clear_cache();
-            apc_clear_cache('user');
+            apcu_clear_cache();
         } else {
 
             foreach (glob($this->cachePath . DIRECTORY_SEPARATOR . '*' . self::CACHE_HTML_EXT) as $htmlFile) {
