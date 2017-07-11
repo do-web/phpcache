@@ -67,7 +67,11 @@ class Cache
     protected function cleanUp($buffer, $phase)
     {
         if ($this->config['gzip']) {
-            $buffer = $this->stop(gzencode($buffer, 9));
+            $isGzip = 0 === mb_strpos($buffer , "\x1f" . "\x8b" . "\x08");
+
+            if(!$isGzip) {
+                $buffer = $this->stop(gzencode($buffer, 9));
+            }
             header('Content-Encoding: gzip');
             header('Content-Length: ' . strlen($buffer));
         } else {
