@@ -184,8 +184,13 @@ class Cache
                         apcu_delete($this->getHtmlCacheFilename());
                         apcu_delete($this->getDataCacheFilename());
                     } else {
-                        unlink($this->getHtmlCacheFilename());
-                        unlink($this->getDataCacheFilename());
+                        if(is_file($this->getHtmlCacheFilename())) {
+                            unlink($this->getHtmlCacheFilename());
+                        }
+
+                        if(is_file($this->getDataCacheFilename())) {
+                            unlink($this->getDataCacheFilename());
+                        }
                     }
                 }
 
@@ -201,8 +206,14 @@ class Cache
                         (time() - filemtime($this->getHtmlCacheFilename())) > intval($this->config['lifetime'])
                     ) {
 
-                        unlink($this->getHtmlCacheFilename());
-                        unlink($this->getDataCacheFilename());
+                        if(is_file($this->getHtmlCacheFilename())) {
+                            unlink($this->getHtmlCacheFilename());
+                        }
+
+                        if(is_file($this->getDataCacheFilename())) {
+                            unlink($this->getDataCacheFilename());
+                        }
+
                     } else {
 
                         if ($this->apcu) {
